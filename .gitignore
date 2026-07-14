@@ -1,0 +1,10 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+
+# Ansible
+*.retry
+
+# secrets
+*.env
+vault-password.txt
