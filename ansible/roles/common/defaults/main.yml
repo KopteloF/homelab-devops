@@ -1,3 +1,7 @@
 #SPDX-License-Identifier: MIT-0
 ---
+common_packages:
+  - curl
+  - htop
+  - vim
 # defaults file for roles/common

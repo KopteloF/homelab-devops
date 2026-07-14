@@ -1,11 +1,8 @@
-#SPDX-License-Identifier: MIT-0
 ---
 - name: Install useful packages
   ansible.builtin.apt:
-    name:
-      - curl
-      - htop
-      - vim
+    name: "{{ common_packages }}"
     state: present
     update_cache: true
-# tasks file for roles/common
+  tags:
+    - packages
