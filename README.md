@@ -27,7 +27,6 @@
     |                           |
   app01                       db01
 
-
 ---
 
 ## Серверы
@@ -68,7 +67,6 @@ lab/
 ├── install_packages.yml
 ├── README.md
 └── .gitignore
-
 
 ---
 
