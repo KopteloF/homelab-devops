@@ -1,0 +1,14 @@
+---
+- name: Prepare servers
+  hosts: servers
+  become: yes
+
+  tasks:
+    - name: Install useful packages
+      apt:
+        name:
+          - htop
+          - curl
+          - vim
+        state: present
+        update_cache: yes
