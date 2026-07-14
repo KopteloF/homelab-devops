@@ -1,0 +1,12 @@
+[app]
+app01
+
+[database]
+db01
+
+[servers:children]
+app
+database
+
+[all:vars]
+ansible_python_interpreter=/usr/bin/python3
