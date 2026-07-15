@@ -56,20 +56,21 @@
   notify: Restart postgresql
   when: pg_conf_dir is defined
 
+# От root через unix-socket (peer). become_user: postgres ломается на Ubuntu 24+/25+ (chmod ACL).
 - name: Create database user
-  become: true
-  become_user: postgres
   community.postgresql.postgresql_user:
     name: "{{ postgres_user }}"
     password: "{{ postgres_password }}"
     state: present
+    login_unix_socket: /var/run/postgresql
+  become: true
   when: pg_conf_dir is defined
 
 - name: Create database
-  become: true
-  become_user: postgres
   community.postgresql.postgresql_db:
     name: "{{ postgres_db }}"
     owner: "{{ postgres_user }}"
     state: present
+    login_unix_socket: /var/run/postgresql
+  become: true
   when: pg_conf_dir is defined
