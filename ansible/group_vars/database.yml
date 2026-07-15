@@ -1,5 +1,0 @@
----
-# PostgreSQL на db01 — слушает только app01 (не 0.0.0.0/0).
-postgres_port: 5432
-# IP app01 на host-only; берётся из inventory (ansible_host).
-postgres_client_host: "{{ hostvars['app01']['ansible_host'] }}"

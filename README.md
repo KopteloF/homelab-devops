@@ -50,8 +50,9 @@
 homelab-devops/
 ├── apps/demo-app/          # готовое приложение (stdlib, без правок)
 ├── ansible/
-│   ├── inventory/hosts
-│   ├── group_vars/
+│   ├── inventory/
+│   │   ├── hosts
+│   │   └── group_vars/   # рядом с inventory (Ansible подхватывает отсюда)
 │   ├── playbooks/site.yml
 │   ├── requirements.yml    # ansible-galaxy collections
 │   └── roles/

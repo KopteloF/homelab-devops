@@ -10,6 +10,9 @@ hardening_pubkey_authentication: "yes"
 hardening_ufw_default_incoming: deny
 hardening_ufw_default_outgoing: allow
 
+# timezone (дублируем здесь — group_vars/inventory иногда не подхватывается при конфликте hosts)
+timezone: Europe/Moscow
+
 # sysctl (базовый сетевой hardening)
 hardening_sysctl:
   net.ipv4.conf.all.rp_filter: 1
