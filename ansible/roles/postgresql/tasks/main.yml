@@ -56,21 +56,34 @@
   notify: Restart postgresql
   when: pg_conf_dir is defined
 
-# От root через unix-socket (peer). become_user: postgres ломается на Ubuntu 24+/25+ (chmod ACL).
+# User/БД через sudo -u postgres (root + peer не работает; become_user: postgres — ACL-баг Ansible).
 - name: Create database user
-  community.postgresql.postgresql_user:
-    name: "{{ postgres_user }}"
-    password: "{{ postgres_password }}"
-    state: present
-    login_unix_socket: /var/run/postgresql
+  ansible.builtin.shell: |
+    set -e
+    if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='{{ postgres_user }}'" | grep -q 1; then
+      sudo -u postgres psql -c "CREATE USER {{ postgres_user }} WITH PASSWORD '{{ postgres_password }}';"
+      echo changed
+    else
+      sudo -u postgres psql -c "ALTER USER {{ postgres_user }} WITH PASSWORD '{{ postgres_password }}';"
+    fi
+  args:
+    executable: /bin/bash
   become: true
+  register: pg_user_result
+  changed_when: "'changed' in pg_user_result.stdout"
+  no_log: true
   when: pg_conf_dir is defined
 
 - name: Create database
-  community.postgresql.postgresql_db:
-    name: "{{ postgres_db }}"
-    owner: "{{ postgres_user }}"
-    state: present
-    login_unix_socket: /var/run/postgresql
+  ansible.builtin.shell: |
+    set -e
+    if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='{{ postgres_db }}'" | grep -q 1; then
+      sudo -u postgres psql -c "CREATE DATABASE {{ postgres_db }} OWNER {{ postgres_user }};"
+      echo changed
+    fi
+  args:
+    executable: /bin/bash
   become: true
+  register: pg_db_result
+  changed_when: "'changed' in pg_db_result.stdout"
   when: pg_conf_dir is defined
