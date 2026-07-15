@@ -8,7 +8,7 @@
     state: present
     update_cache: true
 
-- name: Detect PostgreSQL major version (Ubuntu: /etc/postgresql/<ver>/main)
+- name: "Detect PostgreSQL major version (Ubuntu path /etc/postgresql/<ver>/main)"
   ansible.builtin.shell: ls -1 /etc/postgresql | head -1
   register: pg_major
   changed_when: false
