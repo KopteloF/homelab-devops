@@ -1,5 +1,0 @@
-feat(ansible): роль hardening — SSH, UFW, timezone, sysctl
-
-SSH через drop-in в sshd_config.d (PermitRootLogin/PasswordAuthentication no).
-UFW: сначала allow SSH:22, затем enable deny incoming; на db01 — postgres:5432
-только с IP app01. Коллекции community.general + ansible.posix в requirements.yml.
