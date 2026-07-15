@@ -1,4 +1,12 @@
 ---
+- name: Ensure postgres password is set
+  ansible.builtin.assert:
+    that:
+      - postgres_password | length > 0
+    fail_msg: >
+      Задай пароль: ansible-playbook playbooks/site.yml -e postgres_password='...'
+      (не храни пароль в git)
+
 - name: Install PostgreSQL
   ansible.builtin.apt:
     name:
@@ -8,22 +16,28 @@
     state: present
     update_cache: true
 
+# В --check apt не ставит пакеты → /etc/postgresql/ ещё нет. Эта задача всё равно
+# должна выполняться (check_mode: false), иначе pg_conf_dir пустой → /etc/postgresql//main.
 - name: "Detect PostgreSQL major version (Ubuntu path /etc/postgresql/<ver>/main)"
-  ansible.builtin.shell: ls -1 /etc/postgresql | head -1
+  ansible.builtin.shell: ls -1 /etc/postgresql 2>/dev/null | head -1
   register: pg_major
   changed_when: false
+  failed_when: false
+  check_mode: false
 
 - name: Set postgres config paths
   ansible.builtin.set_fact:
-    pg_conf_dir: "/etc/postgresql/{{ pg_major.stdout }}/main"
+    pg_conf_dir: "/etc/postgresql/{{ pg_major.stdout | trim }}/main"
+  when: pg_major.stdout | trim | length > 0
 
-- name: Ensure postgres password is set
-  ansible.builtin.assert:
-    that:
-      - postgres_password | length > 0
-    fail_msg: >
-      Задай пароль: ansible-playbook playbooks/site.yml -e postgres_password='...'
-      (не храни пароль в git)
+- name: Note — конфиг PostgreSQL пропущен в dry-run
+  ansible.builtin.debug:
+    msg: >
+      Кластер PostgreSQL ещё не установлен (режим --check).
+      Настройка postgresql.conf/pg_hba и создание БД выполнятся на живом прогоне.
+  when:
+    - ansible_check_mode
+    - pg_conf_dir is not defined
 
 - name: Configure listen_addresses
   ansible.builtin.lineinfile:
@@ -31,6 +45,7 @@
     regexp: "^#?listen_addresses\\s*="
     line: "listen_addresses = '{{ postgres_listen_address }}'"
   notify: Restart postgresql
+  when: pg_conf_dir is defined
 
 - name: Allow app01 in pg_hba
   ansible.builtin.blockinfile:
@@ -39,6 +54,7 @@
     block: |
       host    {{ postgres_db }}    {{ postgres_user }}    {{ postgres_client_host }}/32    scram-sha-256
   notify: Restart postgresql
+  when: pg_conf_dir is defined
 
 - name: Create database user
   become: true
@@ -47,6 +63,7 @@
     name: "{{ postgres_user }}"
     password: "{{ postgres_password }}"
     state: present
+  when: pg_conf_dir is defined
 
 - name: Create database
   become: true
@@ -55,3 +72,4 @@
     name: "{{ postgres_db }}"
     owner: "{{ postgres_user }}"
     state: present
+  when: pg_conf_dir is defined
