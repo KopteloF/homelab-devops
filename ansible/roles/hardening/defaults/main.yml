@@ -1,0 +1,19 @@
+---
+# SSH: drop-in в sshd_config.d (не трогаем основной файл).
+hardening_sshd_dropin: /etc/ssh/sshd_config.d/99-hardening.conf
+hardening_ssh_port: 22
+hardening_permit_root_login: "no"
+hardening_password_authentication: "no"
+hardening_pubkey_authentication: "yes"
+
+# UFW
+hardening_ufw_default_incoming: deny
+hardening_ufw_default_outgoing: allow
+
+# sysctl (базовый сетевой hardening)
+hardening_sysctl:
+  net.ipv4.conf.all.rp_filter: 1
+  net.ipv4.conf.default.rp_filter: 1
+  net.ipv4.icmp_echo_ignore_broadcasts: 1
+  net.ipv4.conf.all.accept_redirects: 0
+  net.ipv4.conf.default.accept_redirects: 0

@@ -1,0 +1,4 @@
+---
+# Общие переменные hardening (переопредели IP в inventory, если у тебя другая подсеть).
+timezone: Europe/Moscow
+hardening_ssh_port: 22

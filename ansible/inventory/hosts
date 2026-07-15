@@ -1,8 +1,8 @@
 [app]
-app01
+app01 ansible_host=192.168.56.101
 
 [database]
-db01
+db01 ansible_host=192.168.56.102
 
 [servers:children]
 app
@@ -10,3 +10,5 @@ database
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3
+# ansible_user=ubuntu
+# ansible_ssh_private_key_file=~/.ssh/id_ed25519

@@ -1,0 +1,67 @@
+---
+# Роль hardening: SSH, UFW, timezone, базовый sysctl.
+# Порядок UFW: сначала allow SSH, потом enable — иначе потеряешь доступ.
+
+- name: Install packages for hardening
+  ansible.builtin.apt:
+    name:
+      - ufw
+      - tzdata
+    state: present
+    update_cache: true
+  tags: [hardening, packages]
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+  tags: [hardening, timezone]
+
+- name: Deploy SSH hardening drop-in
+  ansible.builtin.template:
+    src: sshd_hardening.conf.j2
+    dest: "{{ hardening_sshd_dropin }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart sshd
+  tags: [hardening, ssh]
+
+- name: Apply sysctl hardening
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_set: true
+    state: present
+    reload: true
+  loop: "{{ hardening_sysctl | dict2items }}"
+  tags: [hardening, sysctl]
+
+# --- UFW: порядок критичен ---
+- name: Allow SSH before enabling UFW
+  community.general.ufw:
+    rule: allow
+    port: "{{ hardening_ssh_port | string }}"
+    proto: tcp
+  tags: [hardening, ufw]
+
+- name: Allow PostgreSQL from app01 only (db01)
+  community.general.ufw:
+    rule: allow
+    port: "{{ postgres_port | string }}"
+    proto: tcp
+    from_ip: "{{ postgres_client_host }}"
+  when: inventory_hostname in groups.get('database', [])
+  tags: [hardening, ufw, database]
+
+- name: Enable UFW (default deny incoming)
+  community.general.ufw:
+    state: enabled
+    policy: "{{ hardening_ufw_default_incoming }}"
+    direction: incoming
+  tags: [hardening, ufw]
+
+- name: Set UFW default outgoing policy
+  community.general.ufw:
+    direction: outgoing
+    policy: "{{ hardening_ufw_default_outgoing }}"
+  tags: [hardening, ufw]

@@ -54,7 +54,10 @@ ansible/
 ├── inventory/
 ├── playbooks/
 ├── roles/
-│   └── common/
+│   ├── common/
+│   └── hardening/     # SSH, UFW, timezone, sysctl
+├── group_vars/
+├── requirements.yml   # ansible-galaxy collections
 └── ansible.cfg
 ```
 
@@ -73,8 +76,13 @@ ansible all -m ping
 ```bash
 cd ansible
 
+# один раз на bastion
+ansible-galaxy collection install -r requirements.yml
+
 ansible-playbook playbooks/site.yml
 ```
+
+Перед первым hardening: **проверь IP** в `inventory/hosts` (host-only подсеть) и что вход по SSH-ключу работает без пароля.
 
 ---
 
@@ -83,6 +91,7 @@ ansible-playbook playbooks/site.yml
 - [x] SSH
 - [x] Git
 - [x] Ansible
+- [x] Hardening (роль: ssh + ufw + timezone + sysctl)
 - [ ] OpenTofu
 - [ ] Systemd deployment
 - [ ] Docker
