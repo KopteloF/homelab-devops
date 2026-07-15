@@ -36,7 +36,7 @@
       Кластер PostgreSQL ещё не установлен (режим --check).
       Настройка postgresql.conf/pg_hba и создание БД выполнятся на живом прогоне.
   when:
-    - ansible_check_mode
+    - ansible_check_mode | bool
     - pg_conf_dir is not defined
 
 - name: Configure listen_addresses
