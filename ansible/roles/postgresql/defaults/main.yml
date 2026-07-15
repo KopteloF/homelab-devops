@@ -1,0 +1,10 @@
+---
+# PostgreSQL на db01
+postgres_db: homelab
+postgres_user: homelab
+# Пароль задаётся с bastion при первом прогоне (не коммитим):
+# ansible-playbook ... -e postgres_password='...'
+postgres_password: ""
+postgres_port: 5432
+# Слушать только host-only IP этой машины (inventory ansible_host).
+postgres_listen_address: "{{ ansible_host }}"

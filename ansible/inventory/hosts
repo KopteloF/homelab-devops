@@ -1,3 +1,6 @@
+# Ansible запускается С bastion. Bastion в inventory не нужен — только целевые VM.
+# Подставь свои host-only IP (ip -br a на каждой VM).
+
 [app]
 app01 ansible_host=192.168.56.101
 
@@ -10,5 +13,5 @@ database
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3
-# ansible_user=ubuntu
+# ansible_user=ТВОЙ_ПОЛЬЗОВАТЕЛЬ
 # ansible_ssh_private_key_file=~/.ssh/id_ed25519

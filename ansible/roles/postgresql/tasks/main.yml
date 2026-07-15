@@ -1,0 +1,57 @@
+---
+- name: Install PostgreSQL
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2
+    state: present
+    update_cache: true
+
+- name: Detect PostgreSQL major version (Ubuntu: /etc/postgresql/<ver>/main)
+  ansible.builtin.shell: ls -1 /etc/postgresql | head -1
+  register: pg_major
+  changed_when: false
+
+- name: Set postgres config paths
+  ansible.builtin.set_fact:
+    pg_conf_dir: "/etc/postgresql/{{ pg_major.stdout }}/main"
+
+- name: Ensure postgres password is set
+  ansible.builtin.assert:
+    that:
+      - postgres_password | length > 0
+    fail_msg: >
+      Задай пароль: ansible-playbook playbooks/site.yml -e postgres_password='...'
+      (не храни пароль в git)
+
+- name: Configure listen_addresses
+  ansible.builtin.lineinfile:
+    path: "{{ pg_conf_dir }}/postgresql.conf"
+    regexp: "^#?listen_addresses\\s*="
+    line: "listen_addresses = '{{ postgres_listen_address }}'"
+  notify: Restart postgresql
+
+- name: Allow app01 in pg_hba
+  ansible.builtin.blockinfile:
+    path: "{{ pg_conf_dir }}/pg_hba.conf"
+    marker: "# {mark} ANSIBLE homelab app01"
+    block: |
+      host    {{ postgres_db }}    {{ postgres_user }}    {{ postgres_client_host }}/32    scram-sha-256
+  notify: Restart postgresql
+
+- name: Create database user
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_user:
+    name: "{{ postgres_user }}"
+    password: "{{ postgres_password }}"
+    state: present
+
+- name: Create database
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_db:
+    name: "{{ postgres_db }}"
+    owner: "{{ postgres_user }}"
+    state: present

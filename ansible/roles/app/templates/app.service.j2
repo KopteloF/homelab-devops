@@ -1,0 +1,11 @@
+[Service]
+Type=simple
+User={{ app_user }}
+Group={{ app_group }}
+WorkingDirectory={{ app_root }}
+ExecStart={{ app_root }}/venv/bin/python {{ app_root }}/app.py
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
