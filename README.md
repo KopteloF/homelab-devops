@@ -99,7 +99,7 @@ ansible-playbook playbooks/site.yml \
 ```bash
 # Приложение (systemd)
 ssh app01 'systemctl status homelab-app --no-pager'
-curl http://192.168.56.101:8000/health    # host-only IP app01
+curl http://192.168.56.12:8000/health    # host-only IP app01 (подставь свой)
 
 # PostgreSQL (только с app01)
 ssh db01 "sudo -u postgres psql -c '\\l'"
