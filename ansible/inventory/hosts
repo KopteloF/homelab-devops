@@ -1,8 +1,15 @@
+# Ansible запускается С bastion (host-only обычно .10).
+# Проверка: ssh app01 'hostname -I'  → IP из 192.168.56.0/24 (enp0s8).
+#
+#   bastion  192.168.56.10  (control node — не в группе servers)
+#   db01     192.168.56.11
+#   app01    192.168.56.12
+
 [app]
-app01
+app01 ansible_host=192.168.56.12
 
 [database]
-db01
+db01 ansible_host=192.168.56.11
 
 [servers:children]
 app
@@ -10,3 +17,4 @@ database
 
 [all:vars]
 ansible_python_interpreter=/usr/bin/python3
+ansible_user=roman

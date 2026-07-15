@@ -1,0 +1,5 @@
+# Managed by Ansible (role: hardening). Do not edit manually.
+PermitRootLogin {{ hardening_permit_root_login }}
+PasswordAuthentication {{ hardening_password_authentication }}
+PubkeyAuthentication {{ hardening_pubkey_authentication }}
+Port {{ hardening_ssh_port }}

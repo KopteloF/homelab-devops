@@ -1,7 +1,22 @@
 ---
-- name: Configure all servers
+# Базовый hardening + пакеты на app01 и db01
+- name: Base configuration (all servers)
   hosts: servers
   become: true
-
   roles:
     - common
+    - hardening
+
+# PostgreSQL только на db01
+- name: Database server
+  hosts: database
+  become: true
+  roles:
+    - postgresql
+
+# Приложение через systemd только на app01
+- name: Application server
+  hosts: app
+  become: true
+  roles:
+    - app

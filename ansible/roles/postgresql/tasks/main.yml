@@ -1,0 +1,89 @@
+---
+- name: Ensure postgres password is set
+  ansible.builtin.assert:
+    that:
+      - postgres_password | length > 0
+    fail_msg: >
+      Задай пароль: ansible-playbook playbooks/site.yml -e postgres_password='...'
+      (не храни пароль в git)
+
+- name: Install PostgreSQL
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2
+    state: present
+    update_cache: true
+
+# В --check apt не ставит пакеты → /etc/postgresql/ ещё нет. Эта задача всё равно
+# должна выполняться (check_mode: false), иначе pg_conf_dir пустой → /etc/postgresql//main.
+- name: "Detect PostgreSQL major version (Ubuntu path /etc/postgresql/<ver>/main)"
+  ansible.builtin.shell: ls -1 /etc/postgresql 2>/dev/null | head -1
+  register: pg_major
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Set postgres config paths
+  ansible.builtin.set_fact:
+    pg_conf_dir: "/etc/postgresql/{{ pg_major.stdout | trim }}/main"
+  when: pg_major.stdout | trim | length > 0
+
+- name: Note — конфиг PostgreSQL пропущен в dry-run
+  ansible.builtin.debug:
+    msg: >
+      Кластер PostgreSQL ещё не установлен (режим --check).
+      Настройка postgresql.conf/pg_hba и создание БД выполнятся на живом прогоне.
+  when:
+    - ansible_check_mode | bool
+    - pg_conf_dir is not defined
+
+- name: Configure listen_addresses
+  ansible.builtin.lineinfile:
+    path: "{{ pg_conf_dir }}/postgresql.conf"
+    regexp: "^#?listen_addresses\\s*="
+    line: "listen_addresses = '{{ postgres_listen_address }}'"
+  notify: Restart postgresql
+  when: pg_conf_dir is defined
+
+- name: Allow app01 in pg_hba
+  ansible.builtin.blockinfile:
+    path: "{{ pg_conf_dir }}/pg_hba.conf"
+    marker: "# {mark} ANSIBLE homelab app01"
+    block: |
+      host    {{ postgres_db }}    {{ postgres_user }}    {{ postgres_client_host }}/32    scram-sha-256
+  notify: Restart postgresql
+  when: pg_conf_dir is defined
+
+# User/БД через sudo -u postgres (root + peer не работает; become_user: postgres — ACL-баг Ansible).
+- name: Create database user
+  ansible.builtin.shell: |
+    set -e
+    if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='{{ postgres_user }}'" | grep -q 1; then
+      sudo -u postgres psql -c "CREATE USER {{ postgres_user }} WITH PASSWORD '{{ postgres_password }}';"
+      echo changed
+    else
+      sudo -u postgres psql -c "ALTER USER {{ postgres_user }} WITH PASSWORD '{{ postgres_password }}';"
+    fi
+  args:
+    executable: /bin/bash
+  become: true
+  register: pg_user_result
+  changed_when: "'changed' in pg_user_result.stdout"
+  no_log: true
+  when: pg_conf_dir is defined
+
+- name: Create database
+  ansible.builtin.shell: |
+    set -e
+    if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='{{ postgres_db }}'" | grep -q 1; then
+      sudo -u postgres psql -c "CREATE DATABASE {{ postgres_db }} OWNER {{ postgres_user }};"
+      echo changed
+    fi
+  args:
+    executable: /bin/bash
+  become: true
+  register: pg_db_result
+  changed_when: "'changed' in pg_db_result.stdout"
+  when: pg_conf_dir is defined

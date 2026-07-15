@@ -1,0 +1,3 @@
+---
+postgres_port: 5432
+postgres_client_host: "{{ hostvars['app01']['ansible_host'] }}"
